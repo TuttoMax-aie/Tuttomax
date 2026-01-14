@@ -1,0 +1,8 @@
+{
+  "name": "TuttoMaxAndroidConvert",
+  "short_name": "TuttoMax",
+  "description": "Convertitore GPX in Url di Google Maps",
+  "version": "1.0.0",
+  "author": "TuttoMax",
+  "requestFramePermissions": []
+}
