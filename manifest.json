@@ -1,16 +1,16 @@
+
 {
-  "id": "com.tuttomax.androidconvert",
+  "id": "com.tuttomax.gpxconvert",
   "name": "TuttoMax Android Convert",
   "short_name": "TuttoMax",
   "description": "Convertitore GPX professionale ottimizzato per dispositivi Android.",
-  "lang": "it-IT",
-  "start_url": "/",
+  "start_url": "index.html",
   "display": "standalone",
-  "theme_color": "#4285F4",
   "background_color": "#020617",
+  "theme_color": "#4285F4",
   "orientation": "portrait",
-  "categories": ["navigation", "travel"],
-  "scope": "/",
+  "lang": "it-IT",
+  "dir": "ltr",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/854/854878.png",
@@ -29,6 +29,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "TuttoMax Home Mobile"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "TuttoMax Home Desktop"
     }
   ]
 }

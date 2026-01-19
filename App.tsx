@@ -43,10 +43,16 @@ const App: React.FC = () => {
     for (let i = 1; i < distSource.length; i++) {
       totalDist += calculateDistance(distSource[i-1].lat, distSource[i-1].lon, distSource[i].lat, distSource[i].lon);
     }
-    const h = Math.floor(totalDist / 60);
-    const m = Math.round(((totalDist / 60) - h) * 60);
     
-    return { url: "", stats: { distance: totalDist, estimatedTime: `${h}h ${m}m` }, displayPoints, fullTrack };
+    const totalMinutes = (totalDist / 50) * 60;
+    const h = Math.floor(totalMinutes / 60);
+    const m = Math.round(totalMinutes % 60);
+    
+    return { 
+      stats: { distance: totalDist, estimatedTime: `${h}h ${m}m` }, 
+      displayPoints, 
+      fullTrack 
+    };
   }, [gpxData]);
 
   const handleRemovePoint = (index: number) => {
@@ -59,34 +65,57 @@ const App: React.FC = () => {
   const parseGpxText = (text: string) => {
     const parser = new DOMParser();
     const gpxDoc = parser.parseFromString(text, "text/xml");
-    const trkptNodes = Array.from(gpxDoc.querySelectorAll("trkpt"));
-    const rteptNodes = Array.from(gpxDoc.querySelectorAll("rtept, wpt, trkpt[name]"));
     
+    if (gpxDoc.getElementsByTagName("parsererror").length > 0) {
+      throw new Error("Il file non è un file GPX valido.");
+    }
+
+    const trkptNodes = Array.from(gpxDoc.querySelectorAll("trkpt"));
     const fullTrack = trkptNodes.map(pt => ({
       lat: parseFloat(pt.getAttribute("lat") || "0"),
       lon: parseFloat(pt.getAttribute("lon") || "0")
     }));
 
-    const displayPoints = rteptNodes
-      .filter(node => node.querySelector("name") || node.querySelector("extensions"))
-      .map(node => ({
+    // Cerca Waypoints o punti rotta
+    const pointNodes = Array.from(gpxDoc.querySelectorAll("wpt, rtept"));
+    
+    let displayPoints: GpxPoint[] = [];
+
+    if (pointNodes.length > 0) {
+      displayPoints = pointNodes.map(node => ({
         lat: parseFloat(node.getAttribute("lat") || "0"),
         lon: parseFloat(node.getAttribute("lon") || "0"),
         ele: null,
-        name: node.querySelector("name")?.textContent?.trim() || "Punto",
+        name: node.querySelector("name")?.textContent?.trim() || "Tappa",
         description: null
       }));
+    } else if (fullTrack.length > 0) {
+      // Prendi campioni ogni 5km circa o almeno inizio e fine
+      displayPoints = [
+        { ...fullTrack[0], ele: null, name: "Partenza", description: null },
+        { ...fullTrack[fullTrack.length - 1], ele: null, name: "Arrivo", description: null }
+      ];
+    }
+
+    if (displayPoints.length === 0) {
+      throw new Error("Nessun punto geografico trovato nel file.");
+    }
 
     return { displayPoints, fullTrack };
   };
 
   const processGpxFile = async (file: File) => {
-    setLoading(true); setError(null);
+    setLoading(true); 
+    setError(null);
     try {
       const text = await file.text();
-      setGpxData(parseGpxText(text));
-    } catch (err) { setError("Errore nella lettura del file GPX."); }
-    finally { setLoading(false); }
+      const parsed = parseGpxText(text);
+      setGpxData(parsed);
+    } catch (err: any) { 
+      setError(err.message || "Errore nella lettura del file."); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   return (
@@ -103,7 +132,7 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-grow p-4 max-w-2xl mx-auto w-full pb-10">
-        {!derivedResult && !loading && (
+        {!gpxData && !loading && (
           <div className="mt-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
             <FileUploader onFileSelect={processGpxFile} isLoading={loading} />
           </div>
@@ -112,7 +141,7 @@ const App: React.FC = () => {
         {loading && (
           <div className="flex flex-col items-center justify-center py-24">
             <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-            <p className="text-blue-500 font-black uppercase text-xs tracking-[0.3em]">Analisi Percorso...</p>
+            <p className="text-blue-500 font-black uppercase text-xs tracking-[0.3em]">Analisi File...</p>
           </div>
         )}
         
@@ -122,12 +151,12 @@ const App: React.FC = () => {
           </div>
         )}
         
-        {derivedResult && (
+        {gpxData && derivedResult && (
           <ResultCard 
-            url={derivedResult.url} 
+            url="" 
             stats={derivedResult.stats} 
-            points={derivedResult.displayPoints} 
-            fullTrack={derivedResult.fullTrack} 
+            points={gpxData.displayPoints} 
+            fullTrack={gpxData.fullTrack} 
             onRemovePoint={handleRemovePoint} 
             summary="" 
           />
